@@ -15,7 +15,7 @@ class X extends Array {
     this.x = 7
   }
 
-  *testMethod(variable) {
+  get testMethod() {
     let x = 10
     const y = 2
     var z = 43

@@ -74,6 +74,8 @@ const NODE_COMPILERS = {
   'ClassMethod': (n) => (n.static ? 'static ' : '') +
                         (n.async ? 'async ' : '') +
                         (n.generator ? '*' : '') +
+                        (n.kind == 'get' ? 'get ' : '') +
+                        (n.kind == 'set' ? 'set ' : '') +
                         compileNode(n.key) +
                         '(' + n.params.map(compileNode).join(', ') + ')' +
                         compileNode(n.body),
@@ -85,7 +87,6 @@ const NODE_COMPILERS = {
   /*
     // TODO:
 
-    * variable declaration (let, const, var)
     * array literal
     * object literal
 

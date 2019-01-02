@@ -1,11 +1,12 @@
 const loader = require('./loader')
 
 let rcmTree = loader.fromSource(`
-x => {
-  return x+2
+async x => {
+  return console.log('hi')
 }
 `)
 
+console.log(rcmTree)
 console.log(rcmTree.compile())
 
 module.exports = {

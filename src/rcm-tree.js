@@ -12,8 +12,10 @@ const NODE_COMPILERS = {
   'File': (n) => compileNode(n.program),
   'Program': (n) => n.body.map(compileNode).join('\n'),
   'ExpressionStatement': (n) => compileNode(n.expression),
-  'ArrowFunctionExpression': (n) => {
-    return  '((' +
+  'ArrowFunctionExpression': (n) => { // TODO use node.generator property
+    return  '(' +
+            (n.async ? 'async ' : '') +
+            '(' +
             n.params.map(compileNode).join(', ') +
             ') => ' +
             compileNode(n.body) +
@@ -31,6 +33,17 @@ const NODE_COMPILERS = {
                                  + ')',
   'NumericLiteral': (n) => n.value.toString(),
   'Identifier': (n) => n.name,
+  'CallExpression': (n) => '(' +
+                            compileNode(n.callee) +
+                            '(' +
+                            n.arguments.map(compileNode).join(', ') +
+                            '))',
+  'MemberExpression': (n) => '(' +
+                              compileNode(n.object) +
+                              '.' +
+                              compileNode(n.property) +
+                              ')',
+  'StringLiteral': (n) => n.extra.raw
 
 }
 

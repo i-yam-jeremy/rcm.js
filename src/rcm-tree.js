@@ -8,6 +8,41 @@ function isArray(value) {
   return value && typeof value == 'object' && value.constructor.name == 'Array'
 }
 
+const NODE_COMPILERS = {
+  'File': (n) => compileNode(n.program),
+  'Program': (n) => n.body.map(compileNode).join('\n'),
+  'ExpressionStatement': (n) => compileNode(n.expression),
+  'ArrowFunctionExpression': (n) => {
+    return  '((' +
+            n.params.map(compileNode).join(', ') +
+            ') => ' +
+            compileNode(n.body) +
+            ')'
+  },
+  'BlockStatement': (n) => '{\n' + n.body
+                                  .map(compileNode)
+                                  .map(s => '\t' + s)
+                                  .join('\n')
+                                + '\n}',
+  'ReturnStatement': (n) => 'return ' + compileNode(n.argument),
+  'BinaryExpression': (n) => '(' + compileNode(n.left)
+                                 + n.operator
+                                 + compileNode(n.right)
+                                 + ')',
+  'NumericLiteral': (n) => n.value.toString(),
+  'Identifier': (n) => n.name,
+
+}
+
+function compileNode(node) {
+  if (node.type in NODE_COMPILERS) {
+    return NODE_COMPILERS[node.type](node)
+  }
+  else {
+    throw 'Node type ' + node.type + ' not handled'
+  }
+}
+
 class RcmTreeNode {
 
   constructor(parseTreeNode) {
@@ -25,6 +60,10 @@ class RcmTreeNode {
         this[field] = fieldValue
       }
     }
+  }
+
+  compile() {
+    return compileNode(this)
   }
 
 }

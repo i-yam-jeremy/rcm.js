@@ -81,9 +81,15 @@ const NODE_COMPILERS = {
                         compileNode(n.body),
   'VariableDeclaration': (n) => n.kind + ' ' +
                                  n.declarations.map(compileNode).join(', '),
-  'VariableDeclarator': (n) => compileNode(n.id) + (n.init ? '=' + compileNode(n.init) : '')
-
-
+  'VariableDeclarator': (n) => compileNode(n.id) + (n.init ? '=' + compileNode(n.init) : ''),
+  'ObjectExpression': (n) => '{' + n.properties.map(compileNode).join(', ') + '}',
+  'ObjectProperty': (n) => compileNode(n.key) + ': ' + compileNode(n.value), // TODO add method type values (since that's allowed in new version of ECMAScript)
+  'ArrayExpression': (n) => '[' + n.elements.map(compileNode).join(', ') + ']',
+  'NewExpression': (n) => '(new ' +
+                            compileNode(n.callee) +
+                            '(' +
+                            n.arguments.map(compileNode).join(', ') +
+                            '))',
   /*
     // TODO:
 

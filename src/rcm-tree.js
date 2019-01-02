@@ -1,4 +1,4 @@
-const IGNORED_PARSE_TREE_FIELDS = ['start', 'end', 'loc']
+const IGNORED_PARSE_TREE_FIELDS = ['start', 'end', 'loc', 'extra', '__clone']
 
 function isParseTreeNode(value) {
   return value && typeof value == 'object' && value.constructor.name == 'Node'
@@ -21,18 +21,22 @@ const NODE_COMPILERS = {
             compileNode(n.body) +
             ')'
   },
-  'BlockStatement': (n) => '{\n' + n.body
-                                  .map(compileNode)
-                                  .map(s => '\t' + s)
-                                  .join('\n')
-                                + '\n}',
+  'BlockStatement': (n) => '{\n' +
+                              n.body
+                                .map(compileNode)
+                                .map(s => '\t' + s)
+                                .join('\n') +
+                            '\n}',
   'ReturnStatement': (n) => 'return ' + compileNode(n.argument),
-  'BinaryExpression': (n) => '(' + compileNode(n.left)
-                                 + n.operator
-                                 + compileNode(n.right)
-                                 + ')',
-  'NumericLiteral': (n) => n.value.toString(),
+  'BinaryExpression': (n) => '(' +
+                              compileNode(n.left) +
+                              n.operator +
+                              compileNode(n.right) +
+                              ')',
+  'NumericLiteral': (n) => JSON.stringify(n.value),
+  'StringLiteral': (n) => JSON.stringify(n.value),
   'Identifier': (n) => n.name,
+  'ThisExpression': (n) => 'this',
   'CallExpression': (n) => '(' +
                             compileNode(n.callee) +
                             '(' +
@@ -43,7 +47,51 @@ const NODE_COMPILERS = {
                               '.' +
                               compileNode(n.property) +
                               ')',
-  'StringLiteral': (n) => n.extra.raw
+  'AssignmentExpression': (n) => '(' +
+                                  compileNode(n.left) +
+                                  n.operator +
+                                  compileNode(n.right) +
+                                  ')',
+  'FunctionDeclaration': (n) => '(' +
+                                 (n.async ? 'async ' : '') +
+                                 'function' +
+                                 (n.generator ? '*' : '') +
+                                 ' ' +
+                                 compileNode(n.id) +
+                                 '(' + n.params.map(compileNode).join(', ') + ')' +
+                                 compileNode(n.body) +
+                                 ')',
+  'ClassDeclaration': (n) => '(class ' + compileNode(n.id) +
+                              (n.superClass ? ' extends ' + compileNode(n.superClass) : '') +
+                              compileNode(n.body) +
+                              ')',
+  'ClassBody': (n) => '{\n' +
+                        n.body
+                          .map(compileNode)
+                          .map(s => '\t' + s)
+                          .join('\n') +
+                      '\n}',
+  'ClassMethod': (n) => (n.static ? 'static ' : '') +
+                        (n.async ? 'async ' : '') +
+                        (n.generator ? '*' : '') +
+                        compileNode(n.key) +
+                        '(' + n.params.map(compileNode).join(', ') + ')' +
+                        compileNode(n.body),
+  'VariableDeclaration': (n) => n.kind + ' ' +
+                                 n.declarations.map(compileNode).join(', '),
+  'VariableDeclarator': (n) => compileNode(n.id) + (n.init ? '=' + compileNode(n.init) : '')
+
+
+  /*
+    // TODO:
+
+    * variable declaration (let, const, var)
+    * array literal
+    * object literal
+
+  */
+
+
 
 }
 

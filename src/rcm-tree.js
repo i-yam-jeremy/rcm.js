@@ -118,7 +118,7 @@ const NODE_COMPILERS = {
   'ForStatement': (n) => 'for (' +
                           compileNode(n.init) + ';' +
                           compileNode(n.test) + ';' +
-                          compileNode(n.update) +
+                          compileNode(n.update) + ')' +
                           compileNode(n.body),
   'WhileStatement': (n) => 'while (' + compileNode(n.test) + ')' + compileNode(n.body),
   'IfStatement': (n) => 'if (' +

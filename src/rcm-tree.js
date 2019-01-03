@@ -30,11 +30,12 @@ const NODE_COMPILERS = {
   'ReturnStatement': (n) => 'return ' + compileNode(n.argument),
   'BinaryExpression': (n) => '(' +
                               compileNode(n.left) +
-                              n.operator +
+                              ' ' + n.operator + ' ' +
                               compileNode(n.right) +
                               ')',
   'NumericLiteral': (n) => JSON.stringify(n.value),
   'StringLiteral': (n) => JSON.stringify(n.value),
+  'BooleanLiteral': (n) => JSON.stringify(n.value),
   'Identifier': (n) => n.name,
   'ThisExpression': (n) => 'this',
   'CallExpression': (n) => '(' +
@@ -82,24 +83,56 @@ const NODE_COMPILERS = {
   'VariableDeclaration': (n) => n.kind + ' ' +
                                  n.declarations.map(compileNode).join(', '),
   'VariableDeclarator': (n) => compileNode(n.id) + (n.init ? '=' + compileNode(n.init) : ''),
-  'ObjectExpression': (n) => '{' + n.properties.map(compileNode).join(', ') + '}',
+  'ObjectExpression': (n) => '({' + n.properties.map(compileNode).join(', ') + '})',
   'ObjectProperty': (n) => compileNode(n.key) + ': ' + compileNode(n.value), // TODO add method type values (since that's allowed in new version of ECMAScript)
-  'ArrayExpression': (n) => '[' + n.elements.map(compileNode).join(', ') + ']',
+  'ArrayExpression': (n) => '([' + n.elements.map(compileNode).join(', ') + '])',
   'NewExpression': (n) => '(new ' +
                             compileNode(n.callee) +
                             '(' +
                             n.arguments.map(compileNode).join(', ') +
                             '))',
-  /*
-    // TODO:
-
-    * array literal
-    * object literal
-
-  */
-
-
-
+  'UnaryExpression': (n) => '(' +
+                             (n.prefix ? (n.operator == 'typeof' ? 'typeof ' : n.operator) : '') +
+                             compileNode(n.argument) +
+                             (!n.prefix ? (n.operator == 'typeof' ? 'typeof ' : n.operator) : '') +
+                             ')',
+  'UpdateExpression': (n) => '(' +
+                              (n.prefix ? n.operator : '') +
+                              compileNode(n.argument) +
+                              (!n.prefix ? n.operator : '') +
+                              ')',
+  'SequenceExpression': (n) => '(' + n.expressions.map(compileNode).join(', ') + ')',
+  'BreakStatement': (n) => (n.label ? 'break ' + compileNode(n.label) : 'break'),
+  'ForInStatement': (n) => 'for (' +
+                            compileNode(n.left) +
+                            ' in ' +
+                            compileNode(n.right) +
+                            ') ' +
+                            compileNode(n.body),
+  'ForOfStatement': (n) => 'for (' +              // TODO figure out where n.await can be true (cause I can figure out the input syntax to trigger it)
+                            compileNode(n.left) +
+                            ' of ' +
+                            compileNode(n.right) +
+                            ') ' +
+                            compileNode(n.body),
+  'ForStatement': (n) => 'for (' +
+                          compileNode(n.init) + ';' +
+                          compileNode(n.test) + ';' +
+                          compileNode(n.update) +
+                          compileNode(n.body),
+  'WhileStatement': (n) => 'while (' + compileNode(n.test) + ')' + compileNode(n.body),
+  'IfStatement': (n) => 'if (' +
+                         compileNode(n.test) +
+                         ')' +
+                         compileNode(n.consequent) +
+                         'else {' + compileNode(n.alternate) + '}',
+  'SwitchStatement': (n) => 'switch (' + compileNode(n.discriminant) + ') {\n' +
+                             n.cases.map(compileNode).join('\n') +
+                             '\n}',
+  'SwitchCase': (n) => (n.test ? ('case ' + compileNode(n.test)) : 'default') +
+                        ':\n' +
+                        n.consequent.map(compileNode).join('\n'),
+  'LabeledStatement': (n) => compileNode(n.label) + ': ' + compileNode(n.body)
 }
 
 function compileNode(node) {

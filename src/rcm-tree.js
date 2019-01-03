@@ -8,19 +8,36 @@ function isArray(value) {
   return value && typeof value == 'object' && value.constructor.name == 'Array'
 }
 
+function visitNode(node, nodeMatchType, callback) {
+  for (let field in node) {
+    let fieldValue = node[field]
+
+    if (fieldValue instanceof RcmTreeNode) {
+      visitNode(fieldValue, nodeMatchType, callback)
+    }
+    else if (fieldValue instanceof Array) {
+      for (let element of fieldValue) {
+        if (element instanceof RcmTreeNode) {
+          visitNode(element, nodeMatchType, callback)
+        }
+      }
+    }
+  }
+
+  if (node.type == nodeMatchType) {
+    callback(node)
+  }
+}
+
 const NODE_COMPILERS = {
   'File': (n) => compileNode(n.program),
   'Program': (n) => n.body.map(compileNode).join('\n'),
   'ExpressionStatement': (n) => compileNode(n.expression),
-  'ArrowFunctionExpression': (n) => { // TODO use node.generator property
-    return  '(' +
-            (n.async ? 'async ' : '') +
-            '(' +
-            n.params.map(compileNode).join(', ') +
-            ') => ' +
-            compileNode(n.body) +
-            ')'
-  },
+  'ArrowFunctionExpression': (n) => '((' +
+                                     n.params.map(compileNode).join(', ') +
+                                     ') => ' +
+                                     compileNode(n.body) +
+                                     ')',
   'BlockStatement': (n) => '{\n' +
                               n.body
                                 .map(compileNode)
@@ -177,6 +194,10 @@ class RcmTreeNode {
         }
       }
     }
+  }
+
+  visit(nodeMatchType, callback) {
+    visitNode(this, nodeMatchType, callback)
   }
 
   compile() {

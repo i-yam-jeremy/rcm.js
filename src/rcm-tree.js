@@ -132,7 +132,15 @@ const NODE_COMPILERS = {
   'SwitchCase': (n) => (n.test ? ('case ' + compileNode(n.test)) : 'default') +
                         ':\n' +
                         n.consequent.map(compileNode).join('\n'),
-  'LabeledStatement': (n) => compileNode(n.label) + ': ' + compileNode(n.body)
+  'LabeledStatement': (n) => compileNode(n.label) + ': ' + compileNode(n.body),
+
+
+  // Custom Nodes
+  'InjectedCode': (n) => '(() => {\n' +
+                         '(() => {\n' + n.code + '\n})()\n' +
+                         'return ' + compileNode(n.oldNode) +
+                         '})()',
+  'InjectedModifier': (n) => '(' + n.code + ')(' + compileNode(n.oldNode) + ')'
 }
 
 function compileNode(node) {
@@ -146,25 +154,57 @@ function compileNode(node) {
 
 class RcmTreeNode {
 
-  constructor(parseTreeNode) {
-    for (let field in parseTreeNode) {
-      if (IGNORED_PARSE_TREE_FIELDS.indexOf(field) == -1) {
-        let fieldValue = parseTreeNode[field]
+  constructor(node) {
+    if (node instanceof RcmTreeNode) {
+      for (let field in node) {
+        this[field] = node[field]
+      }
+    }
+    else {
+      let parseTreeNode = node
+      for (let field in parseTreeNode) {
+        if (IGNORED_PARSE_TREE_FIELDS.indexOf(field) == -1) {
+          let fieldValue = parseTreeNode[field]
 
-        if (isParseTreeNode(fieldValue)) {
-          fieldValue = new RcmTreeNode(fieldValue)
-        }
-        else if (isArray(fieldValue)) {
-          fieldValue = fieldValue.map(x => isParseTreeNode(x) ? new RcmTreeNode(x) : x)
-        }
+          if (isParseTreeNode(fieldValue)) {
+            fieldValue = new RcmTreeNode(fieldValue)
+          }
+          else if (isArray(fieldValue)) {
+            fieldValue = fieldValue.map(x => isParseTreeNode(x) ? new RcmTreeNode(x) : x)
+          }
 
-        this[field] = fieldValue
+          this[field] = fieldValue
+        }
       }
     }
   }
 
   compile() {
     return compileNode(this)
+  }
+
+  // currently only works for expressions (things like variable declarations don't work)
+  injectBefore(codeSource) {
+    let oldNode = new RcmTreeNode(this)
+    for (let field in this) {
+      delete this[field]
+    }
+
+    this.type = 'InjectedCode'
+    this.code = codeSource
+    this.oldNode = oldNode
+  }
+
+  // currently only works for expressions (things like variable declarations don't work)
+  injectModifier(codeSource) {
+    let oldNode = new RcmTreeNode(this)
+    for (let field in this) {
+      delete this[field]
+    }
+
+    this.type = 'InjectedModifier'
+    this.code = codeSource
+    this.oldNode = oldNode
   }
 
 }

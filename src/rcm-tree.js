@@ -4,10 +4,6 @@ function isParseTreeNode(value) {
   return value && typeof value == 'object' && value.constructor.name == 'Node'
 }
 
-function isArray(value) {
-  return value && typeof value == 'object' && value.constructor.name == 'Array'
-}
-
 function visitNode(node, nodeMatchType, callback) {
   for (let field in node) {
     let fieldValue = node[field]
@@ -186,7 +182,7 @@ class RcmTreeNode {
           if (isParseTreeNode(fieldValue)) {
             fieldValue = new RcmTreeNode(fieldValue)
           }
-          else if (isArray(fieldValue)) {
+          else if (fieldValue instanceof Array) {
             fieldValue = fieldValue.map(x => isParseTreeNode(x) ? new RcmTreeNode(x) : x)
           }
 

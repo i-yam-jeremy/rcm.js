@@ -6,15 +6,17 @@ function isParseTreeNode(value) {
 
 function visitNode(node, nodeMatchType, callback) {
   for (let field in node) {
-    let fieldValue = node[field]
+    if (field != 'parent') {
+      let fieldValue = node[field]
 
-    if (fieldValue instanceof RcmTreeNode) {
-      visitNode(fieldValue, nodeMatchType, callback)
-    }
-    else if (fieldValue instanceof Array) {
-      for (let element of fieldValue) {
-        if (element instanceof RcmTreeNode) {
-          visitNode(element, nodeMatchType, callback)
+      if (fieldValue instanceof RcmTreeNode) {
+        visitNode(fieldValue, nodeMatchType, callback)
+      }
+      else if (fieldValue instanceof Array) {
+        for (let element of fieldValue) {
+          if (element instanceof RcmTreeNode) {
+            visitNode(element, nodeMatchType, callback)
+          }
         }
       }
     }
@@ -167,10 +169,13 @@ function compileNode(node) {
 
 class RcmTreeNode {
 
-  constructor(node) {
+  constructor(node, parent) {
+    this.parent = parent
     if (node instanceof RcmTreeNode) {
       for (let field in node) {
-        this[field] = node[field]
+        if (field != 'parent') {
+          this[field] = node[field]
+        }
       }
     }
     else {
@@ -180,10 +185,10 @@ class RcmTreeNode {
           let fieldValue = parseTreeNode[field]
 
           if (isParseTreeNode(fieldValue)) {
-            fieldValue = new RcmTreeNode(fieldValue)
+            fieldValue = new RcmTreeNode(fieldValue, this)
           }
           else if (fieldValue instanceof Array) {
-            fieldValue = fieldValue.map(x => isParseTreeNode(x) ? new RcmTreeNode(x) : x)
+            fieldValue = fieldValue.map(x => isParseTreeNode(x) ? new RcmTreeNode(x, this) : x)
           }
 
           this[field] = fieldValue
@@ -214,7 +219,7 @@ class RcmTreeNode {
 
   // currently only works for expressions (things like variable declarations don't work)
   injectModifier(codeSource) {
-    let oldNode = new RcmTreeNode(this)
+    let oldNode = new RcmTreeNode(this, this)
     for (let field in this) {
       delete this[field]
     }
@@ -222,6 +227,7 @@ class RcmTreeNode {
     this.type = 'InjectedModifier'
     this.code = codeSource
     this.oldNode = oldNode
+    this.parent = oldNode.parent
   }
 
 }

@@ -230,7 +230,44 @@ class RcmTreeNode {
     this.parent = oldNode.parent
   }
 
+  eval(inspector) {
+    evalNode(this, inspector)
+  }
+
 }
+
+
+/*
+
+class RuntimeInspector {
+
+  constructor(RcmTreeNode root)
+
+  // Gets the current node that is about to be executed
+  getter RcmTreeNode currentNode
+
+  // Sets a value in the current scope
+  void setInScope(string key, any value)
+
+  // Gets a value in the current scope
+  any getInScope(string key)
+
+  // Get scope keys
+  string[] getScopeKeys()
+
+  // Executes the current node WITHOUT going into sub nodes for next nodes
+  void step()
+
+  // Executes the current node WITH going into sub nodes for next nodes
+  void next()
+
+  // Skips the current node without evaluating it (also skips the node's children)
+  void skip()
+
+}
+
+
+*/
 
 module.exports = {
   RcmTreeNode

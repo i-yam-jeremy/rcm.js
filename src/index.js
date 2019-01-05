@@ -7,7 +7,18 @@ let z = x*y
 `)
 
 rcmTree.visit('NumericLiteral', (node) => {
-  node.injectModifier('x => x+1')
+  if (node.parent.type == 'VariableDeclarator' && node.parent.id.name == 'x') {
+    node.injectModifier('x => x+1')
+  }
+  /*node.injectModifier('x => x+1')
+  node.injectModifier(`x => {
+    if (x == 1) {
+      return -1
+    }
+    else {
+      return x
+    }
+  }`)*/
 })
 
 console.log(rcmTree.compile())
